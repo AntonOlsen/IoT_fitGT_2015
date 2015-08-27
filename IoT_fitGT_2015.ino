@@ -1,29 +1,37 @@
 /*
-  WiFi Web Server LED Blink
+  WiFi Web Server Control Robot
+  
+  Based on the SimpleWebServerWiFi example.
 
- A simple web server that lets you blink an LED via the web.
- This sketch will print the IP address of your WiFi (once connected)
- to the Serial monitor. From there, you can open that address in a web browser
- to turn on and off the LED on pin 9.
+  This example is written for a network using WPA encryption. For
+  WEP or WPA, change the Wifi.begin() call accordingly.
 
- If the IP address of your WiFi is yourAddress:
- http://yourAddress/H turns the LED on
- http://yourAddress/L turns it off
+  Circuit:
+  * CC3200 WiFi LaunchPad or CC3100 WiFi BoosterPack
+    with TM4C or MSP430 LaunchPad
+  * Launchpad MSP430 5529 w/ CC3100 Booster and TI DRV8835 on a Pololu Carrier board.
+  * Pins to DRV8835
+  * P6_1 - AEN (enable)
+  * P6_2 - APH (direction)
+  * P6_3 - BEN (enable)
+  * P6_4 - BPH (direction)
+  
+  * P4_1 - V+ for Left LED
+  * P3_5 - GND for Left LED
 
- This example is written for a network using WPA encryption. For
- WEP or WPA, change the Wifi.begin() call accordingly.
+  * P8_1 - V+ for Right LED
+  * P8_2 - GND for Right LED
+  
+  * P6)0 - Analog Input
 
- Circuit:
- * CC3200 WiFi LaunchPad or CC3100 WiFi BoosterPack
-   with TM4C or MSP430 LaunchPad
-
- created 25 Nov 2012
- by Tom Igoe
- modified 6 July 2014
- by Noah Luskey
- modified 26 August 2015
- by Anton Olsen
+  created 25 Nov 2012
+  by Tom Igoe
+  modified 6 July 2014
+  by Noah Luskey
+  modified 26 August 2015 - Gutted the LED control and added Robot Control
+  by Anton Olsen
  */
+
 #ifndef __CC3200R1M1RGC__
 // Do not include SPI for CC3200 LaunchPad
 #include <SPI.h>
@@ -55,7 +63,6 @@ void setup() {
   int ctr=0;
   
   Serial.begin(115200);      // initialize serial communication
-  pinMode(RED_LED, OUTPUT);  // set the LED pin mode
   
   pinMode(TURN_EN,  OUTPUT);
   pinMode(TURN_DIR, OUTPUT);
@@ -92,7 +99,7 @@ void setup() {
   while ( WiFi.status() != WL_CONNECTED) {
     Serial.print(".");                        // Print dots while we wait to connect
     analogWrite( LED_LEFT1, 128*(ctr++%2) );  // Blink the left LED
-    delay(250);
+    delay(125);
   }
   analogWrite( LED_LEFT1, 128 );              // Turn on the left LED when we are connected.
   
@@ -101,10 +108,10 @@ void setup() {
   
   while (WiFi.localIP() == INADDR_NONE) {
     Serial.print(".");                        // Print dots while we wait for an ip addresss
-    analogWrite( LED_LEFT1, 128*(ctr++%2) );  // Blink the left LED
-    delay(250);
+    analogWrite( LED_RIGHT1, 128*(ctr++%2) );  // Blink the left LED
+    delay(125);
   }
-  analogWrite( LED_LEFT1, 128 );              // Turn on the left LED when we have an IP.
+  analogWrite( LED_RIGHT1, 128 );              // Turn on the left LED when we have an IP.
 
   Serial.println("\nIP Address obtained");
   
@@ -145,8 +152,6 @@ void loop() {
             // the content of the HTTP response follows the header:
             client.println("<html><head><title>Energia CC3200 WiFi Web Server</title></head><body align=center>");
             client.println("<h1 align=center><font color=\"red\">Welcome to the CC3200 WiFi Web Server</font></h1>");
-            client.print("RED LED <button onclick=\"location.href='/RH'\">HIGH</button>");
-            client.println(" <button onclick=\"location.href='/RL'\">LOW</button><br><br>");
             
             client.println(" <button onclick=\"location.href='/F'\">Forward</button><br>");
             client.println(" <button onclick=\"location.href='/L'\">Left</button>");
@@ -171,16 +176,6 @@ void loop() {
         else if (c != '\r') {    // if you got anything else but a carriage return character,
           buffer[i++] = c;      // add it to the end of the currentLine
         }
-
-
-        // Check to see if the client request was "GET /RH" or "GET /RL":
-        if (endsWith(buffer, "GET /RH")) {
-          digitalWrite(RED_LED, HIGH);      // GET /RH turns the LED on
-        }
-        if (endsWith(buffer, "GET /RL")) {
-          digitalWrite(RED_LED, LOW);       // GET /RL turns the LED off
-        }
-
 
         // Forward or Back
         if (endsWith(buffer, "GET /F")) {
@@ -216,10 +211,10 @@ void loop() {
 
         // TEST
         if (endsWith(buffer, "GET /T")) {
-          digitalWrite(WALK_EN, HIGH);    // Enable the motor
-          digitalWrite(WALK_DIR,HIGH);    // Enable the motor
-          digitalWrite(TURN_EN, HIGH);    // Enable the motor
-          digitalWrite(TURN_DIR,HIGH);    // Enable the motor
+          digitalWrite(WALK_EN, HIGH);    // Set all pins high
+          digitalWrite(WALK_DIR,HIGH);    // Set all pins high
+          digitalWrite(TURN_EN, HIGH);    // Set all pins high
+          digitalWrite(TURN_DIR,HIGH);    // Set all pins high
         }   
       }
     }
