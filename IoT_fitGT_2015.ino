@@ -31,18 +31,24 @@
   modified 26 August 2015 - Gutted the LED control and added Robot Control
   by Anton Olsen
  */
-
+ 
 #ifndef __CC3200R1M1RGC__
 // Do not include SPI for CC3200 LaunchPad
 #include <SPI.h>
 #endif
 #include <WiFi.h>
 
-char ssid[] = "energia1";           // your network name also called SSID
-char password[] = "launchpad";      // your network password
+#define C3200 1
+//#define F5529 1
+
+
+char ssid[] = "BLUPhone";           // your network name also called SSID
+char password[] = "12345678";      // your network password
 int keyIndex = 0;                   // your network key Index number (needed only for WEP)
 
 // Motor control pins
+
+#ifdef F5529
 int TURN_EN  = P6_1;     // Enable the motors. PWM to control speed
 int TURN_DIR = P6_2;     // 0 or 1 for left or right.
 int WALK_EN  = P6_3;     // Enable walking motor
@@ -56,6 +62,23 @@ int LED_RIGHT1 = P8_1;   // +V for LED
 int LED_RIGHT2 = P8_2;   // GND for LED
 
 int ANALOG_IN = P6_0;    // Analog Input
+#endif
+
+#ifdef C3200
+int TURN_EN  = 4;     // Enable the motors. PWM to control speed
+int TURN_DIR = 5;     // 0 or 1 for left or right.
+int WALK_EN  = 6;     // Enable walking motor
+int WALK_DIR = 7;     // 0 or 1 for forward or back.
+
+// LEDs
+int LED_LEFT1 = 10;    // +V for LED
+int LED_LEFT2 = 30;    // GND for LED
+
+int LED_RIGHT1 = 11;   // +V for LED
+int LED_RIGHT2 = 31;   // GND for LED
+
+int ANALOG_IN = 23;    // Analog Input
+#endif
 
 WiFiServer server(80);
 
@@ -63,6 +86,7 @@ void setup() {
   int ctr=0;
   
   Serial.begin(115200);      // initialize serial communication
+  Serial.println("Booting...");
   
   pinMode(TURN_EN,  OUTPUT);
   pinMode(TURN_DIR, OUTPUT);
@@ -96,6 +120,7 @@ void setup() {
   Serial.print("Attempting to connect to Network named: ");  // attempt to connect to Wifi network:
   Serial.println(ssid);                                      // print the network name (SSID);
   WiFi.begin(ssid, password);                                // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+  Serial.print("WiFi has begun");
   while ( WiFi.status() != WL_CONNECTED) {
     Serial.print(".");                        // Print dots while we wait to connect
     analogWrite( LED_LEFT1, 128*(ctr++%2) );  // Blink the left LED
@@ -130,7 +155,7 @@ void loop() {
   WiFiClient client = server.available();   // listen for incoming clients
   
   sensor = analogRead( ANALOG_IN );
-
+  
   if (client) {                             // if you get a client,
     Serial.println("new client");           // print a message out the serial port
     char buffer[150] = {0};                 // make a buffer to hold incoming data
@@ -152,7 +177,7 @@ void loop() {
             // the content of the HTTP response follows the header:
             client.println("<html><head><title>Energia CC3200 WiFi Web Server</title></head><body align=center>");
             client.println("<h1 align=center><font color=\"red\">Welcome to the CC3200 WiFi Web Server</font></h1>");
-            
+            client.println("<style>button {font-size: 3em;}</style>");
             client.println(" <button onclick=\"location.href='/F'\">Forward</button><br>");
             client.println(" <button onclick=\"location.href='/L'\">Left</button>");
             client.println("&nbsp; <button onclick=\"location.href='/S'\">STOP</button> &nbsp;");
